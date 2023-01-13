@@ -76,6 +76,7 @@ abstract public class Track {
   public static int marginGridSlot = 2;
   public static int widthGridSlot = Car.WIDTH + 2 * marginGridSlot;
   public static int lengthGridSlot = Car.HEIGHT / 2;
+  public static final double metersPerPixel = 0.75;
   public Path2D.Double path = new Path2D.Double();
   public Path2D.Double innerPath = new Path2D.Double();
   public Path2D.Double outerPath = new Path2D.Double();
@@ -123,7 +124,7 @@ abstract public class Track {
     paintFinishLine(g2);
     // for (int i = 0; i < Game.NumCars; i++) {
     for (Car c : cars) {
-      paintCarGridSlot(new Point2D.Double(c.position.x + Car.HEIGHT / 2, c.position.y - Car.WIDTH / 2), g2);
+      paintCarGridSlot(new Point2D.Double(c.initialPosition.x + Car.HEIGHT / 2, c.initialPosition.y - Car.WIDTH / 2), g2);
     }
   }
 
@@ -156,7 +157,7 @@ abstract public class Track {
 }
 
 class OvalTrack extends Track {
-  private double straightLength = 800, curveWidth = 400;
+  private double straightLength = 1300, curveWidth = 400;
   private double x0, y0;
 
   public OvalTrack(double WIDTH, double x0, double y0) {

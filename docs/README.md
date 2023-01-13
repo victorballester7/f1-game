@@ -1,5 +1,6 @@
-# Connect 4 game done in C using minimax algorithm
+# Formula 1 game implemented in Java
 
+<!--
 ## Requirements
 
 - `python`
@@ -37,4 +38,4 @@ gcc -Wall -pedantic -std=c99 -o bin/main src/*.c -lncurses
 ![Main menu](../resources/mainmenu.png?raw=true "Main menu")
 ![Match](../resources/match.png?raw=true "Match")
 ![Ending of a match](../resources/match_ended.png?raw=true "Ending of a match")
-![Colors settings menu](../resources/settings_colors.png?raw=true "Color settings menu")
+![Colors settings menu](../resources/settings_colors.png?raw=true "Color settings menu") -->

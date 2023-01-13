@@ -10,8 +10,8 @@ import java.util.*;
 
 import java.io.*;
 
-public class Game {
-  int WIDTH = 1500, HEIGHT = 1000;
+public class Game implements KeyListener {
+  int WIDTH = 1920, HEIGHT = 1080;
   // Graphics g;
   private Image backImg = null;
   private JFrame frame;
@@ -19,12 +19,12 @@ public class Game {
   public static final int NumCars = 6;
   private Track t;
   public static Car[] cars = new Car[NumCars];
-  private int DELAY = 100;
+  private int DELAY = 10;
 
   public Game() {
     initialize();
-    new MainLoop();
-    // new Timer().schedule(new MainLoop(), 100, DELAY);
+    // new MainLoop();
+    new Timer().schedule(new MainLoop(), 100, DELAY);
   }
 
   private void initialize() {
@@ -34,6 +34,7 @@ public class Game {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // use x button to close the window
     frame.setLocationRelativeTo(null); // centers the window on the screen
     frame.setResizable(false); // prevent the window to be resizable
+    frame.addKeyListener(this);
 
     t = new OvalTrack(100, 300, 300);
 
@@ -65,6 +66,47 @@ public class Game {
     // gPanel.repaint();
   }
 
+  @Override
+  public void keyPressed(KeyEvent e) {
+    switch (e.getKeyCode()) {
+    case 37: // left arrow
+      cars[0].rotationAngle -= Car.rotationSpeed;
+      break;
+    case 38: // up arrow
+      cars[0].appliedEngineTorque = cars[0].MAX_ENGINE_TORQUE;
+      break;
+    case 39: // right arrow
+      cars[0].rotationAngle += Car.rotationSpeed;
+      break;
+    case 40: // down arrow
+      cars[0].appliedBrakeTorque = cars[0].MAX_BRAKING_COEF;
+      break;
+    }
+  }
+
+  @Override
+  public void keyReleased(KeyEvent e) {
+    switch (e.getKeyCode()) {
+    case 37: // left arrow
+      // cars[0].rotationAngle = Math.toRadians(90);
+      break;
+    case 38: // up arrow
+      cars[0].appliedEngineTorque = 0;
+      break;
+    case 39: // right arrow
+      break;
+    case 40: // down arrow
+      cars[0].appliedBrakeTorque = 0;
+      break;
+    }
+  }
+
+  @Override
+  public void keyTyped(KeyEvent e) {
+    // TODO Auto-generated method stub
+
+  }
+
   class gamePanel extends JPanel {
     // private Image backImg;
 
@@ -78,7 +120,6 @@ public class Game {
       Graphics2D g2 = (Graphics2D) g;
       g.drawImage(backImg, 0, 0, this); // background image
       t.drawTrack(g2); // Track
-
       for (Car c : cars) {// Cars
         c.drawCar(g2);
       }

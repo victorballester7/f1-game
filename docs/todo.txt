@@ -1,0 +1,5 @@
+fer marca pneumatics i que despareixi (a la gespa de color marró)
+a la gespa s'ha d'anar més lent i derrapar més 
+fer contador de voltes 
+posar la classificació
+posar un menú incial
