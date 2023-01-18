@@ -1,21 +1,23 @@
-import javax.swing.SwingUtilities;
-
 public class Window {
-  Game win;
+  public static final int FRAMES = 60;
+  Game game;
 
   public Window() {
-    win = new Game();
-    win.show();
-    SwingUtilities.invokeLater(new Runnable() {
-      @Override
-      public void run() {
-        win.update();
-      }
-    });
+    game = new Game();
+    game.show();
+    while (true) {
+      game.run();
+      Game.sleep(1000 / FRAMES);
+    }
+    // SwingUtilities.invokeLater(new Runnable() {
+    // @Override
+    // public void run() {
+    // game.update();
+    // }
+    // });
   }
 
   public static void main(String[] args) {
     new Window();
   }
-
 }

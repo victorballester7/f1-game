@@ -2,8 +2,6 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.awt.image.*;
 import java.io.*;
-import java.util.*;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -11,42 +9,41 @@ abstract public class Car {
   public static final double TOL = 0.001;
   public static final int WIDTH_ORIGINAL = 38;
   public static final int HEIGHT_ORIGINAL = 2 * WIDTH_ORIGINAL;
-  public static final int WIDTH = 20;
+  public static final int WIDTH = 10;
   public static final int HEIGHT = 2 * WIDTH;
-  public static final double rotationSpeed = Math.toRadians(2);
   public int orderedPosition; // 1st, 2nd, ...
+  private double initialSteeringAngle;
   public double rotationAngle = Math.toRadians(0);
-  public double slipRatio;
+  // public double slipRatio;
+  public Track t;
   public Vector2D direction = new Vector2D(1, 0);
   public Vector2D position = new Vector2D();
   public Vector2D initialPosition = new Vector2D();
   public Vector2D velocity = new Vector2D();
-  public Vector2D acceleration = new Vector2D();
-  public double angularVelocity = 0;
+  // public Vector2D acceleration = new Vector2D();
+  // public double angularVelocityRearWheels = 0;
+  // public double angularVelocityCar = 0;
   public BufferedImage img;
-  private boolean isPlayer;
-  private static final double ENGINE_CONSTANT = 3;
-  private static final double WHEEL_RADIUS = 28 / 2 * 0.0254; // 18 - inch tyres
+  public boolean isPlayer;
   private static final double Cd = 0.7; // drag coefficient
-  private static final double Cr = 30 * Cd; // rolling coefficient
-  private static final double Ct = 1; // traction coefficient
-  private static final double mu = 1.5; // friction coefficient of the tyre
-  private static final double g = 9.807; // gravity
-  private static final double AIR_DENSITY = 1.204; // air density
-  private static final double AREA = 1.5; // cross sectional area
-  private static final double MASS = 750; // mass of the car
-  private static final double MASS_WHEEL = 13; // mass of the car
-  private static final double MOMENT_OF_INERTIA = MASS_WHEEL * WHEEL_RADIUS * WHEEL_RADIUS / 2; // moment of inertia for a cylinder
-  public double appliedEngineTorque = 0; // 0 or MAX_ENGINE_TORQUE
-  public double MAX_ENGINE_TORQUE; // between 600 and 800
-  public double appliedBrakeTorque; // 0 or MAX_BRAKING_COEF
-  public double MAX_BRAKING_COEF; // ~ 8000
+  private static final double CrTrack = 30 * Cd; // rolling coefficient
+  private static final double CrWeed = 50 * CrTrack; // rolling coefficient
+  private static final double airDensity = 1.204; // air density
+  private static final double area = 1.5; // cross sectional area
+  private static final double m = 750; // mass of the car
+  private static final double drift = 10; // drift constant
+  public double appliedEngineForce = 0; // 0 or engineMAX
+  public double engineMAX; // between 600 and 800
+  public double appliedBrakeForce; // 0 or brakeMAX
+  public double brakeMAX; // ~ 8000
+  private boolean isDrifting;
 
-  public Car(int orderedPosition, boolean isPlayer) {
+  public Car(int orderedPosition, Track t, boolean isPlayer) {
     this.orderedPosition = orderedPosition;
+    this.t = t;
     this.isPlayer = isPlayer;
     img = setCar();
-    setInitialPosition();
+    setInitialPosition(t.startDirection);
     setCarFeatures();
   }
 
@@ -64,9 +61,10 @@ abstract public class Car {
     return img;
   }
 
-  public void setInitialPosition() {
+  public void setInitialPosition(Vector2D startDirection) {
     int sepFromLine = 10;
-    rotationAngle = Math.signum(direction.x) * Vector2D.angle(direction, new Vector2D(0, 1)); // both are unit vectors
+    initialSteeringAngle = Vector2D.signedAngle(new Vector2D(0, -1), startDirection);
+    // rotationAngle = Vector2D.signedAngle(new Vector2D(0, -1), direction);
 
     // Math.acos(direction.y / direction.norm()); // dot product
     if (orderedPosition % 2 == 1) { // 1st, 3rd, 5th.. cars
@@ -78,124 +76,129 @@ abstract public class Car {
       position.y = Track.finishLinePoint.y + 3 * Track.WIDTH / 4;
       // position.y = Track.finishLinePoint.y + WIDTH / 2 + (WIDTH / 2 - Track.widthGridSlot) / 2;
     }
-    initialPosition.setCoords(position.x, position.y);
+    initialPosition = position;
   }
 
   abstract String getCarImagePath();
 
   abstract void setCarFeatures();
 
+  public double speed() {
+    return velocity.norm();
+  }
+
+  public double rotationRate() { // function a * x / (b + x^2) because it goes to zero at infinity (no steering wheel is hard to move) and it is zero at the origin (because we can turn the car it it is stopped)
+    double scale = 36;
+    double displacement = 10;
+    return scale * speed() / (displacement + speed() * speed());
+  }
+
+  public boolean isOnTrack() {
+    return t.area.contains(position.x, position.y);
+  }
+
   public void update() {
-    // rotationAngle = Math.signum(direction.x) * Math.acos(direction.dotProduct(velocity) /( direction.norm() * velocity.norm())); // dot product
+    // rotationAngle = Math.signum(direction.x) * Math.acos(direction.dotProduct(velocity) /( direction.norm() * speed())); // dot product
 
     // reset direction parameters.
-    direction.x = 0;
-    direction.y = -1;
-    direction = direction.rotate(rotationAngle);
+    // direction.x = 0;
+    // direction.y = -1;
+    // direction = direction.rotate(rotationAngle);
+    rotationAngle = Vector2D.signedAngle(t.startDirection, direction);
 
-    velocity = direction.scalarProd(velocity.norm());
+    // double dif = 0.05 * (speed() / 30.0);
+    // double difAngle = Vector2D.signedAngle(velocity, direction);
+    // if (!Double.isNaN(difAngle)) {
+    // // velocity = velocity.rotate(difAngle / Math.toRadians(drift * rotationRate * speed()));
+    // double r = Math.random() * 50;
+    // // velocity.rotateZ(difAngle / (100 * (5 * dif)));
+    // velocity = velocity.rotate(difAngle / ((50 + r) * (5 * dif)));
+    // // isDrifting = false;
+    // }
+    // velocity = velocity.rotate(difAngle / Math.toRadians(drift * rotationRate * speed()));
+    double r = Math.random() * 50;
+    // velocity.rotateZ(difAngle / (100 * (5 * dif)));
+    double angle = Vector2D.signedAngle(velocity, direction);
+    if (!Double.isNaN(angle)) {
+      velocity = velocity.rotate(angle / (1 + speed()));
+      isDrifting = Math.abs(Math.toDegrees(angle)) > 10;
+    }
+    // velocity = velocity.rotate(rotationRate());
+    // velocity = velocity.rotate(rotationRate() / (1 + speed()));
+    // isDrifting = Math.abs(Math.toDegrees(difAngle)) > 30;
+    // isDrifting = false;
+    // velocity = direction.scalarProd(speed());
 
     // direction = direction.scalarProd(1 / direction.norm()); // the direction hast to be always normalized.
-    // if (velocity.norm() < TOL)
+    // if (speed() < TOL)
     // appliedBrakeTorque = 0;
-
-    double[] newData = rk4();
-    position.setCoords(newData[0], newData[1]);
-    velocity.setCoords(newData[2], newData[3]);
-    angularVelocity = Math.max(0, newData[4]);
-    if (orderedPosition == 1) {
-      System.out.println("velocity: " + velocity.print() + " norm: " + velocity.norm());
-      System.out.println("angularVelocity: " + angularVelocity);
-      System.out.println("angularVelocity (difference): " + (angularVelocity * WHEEL_RADIUS - velocity.norm()));
+    if (isDrifting) {
+      appliedEngineForce *= 0.2;
+      appliedBrakeForce *= 0.2;
+    }
+    Vector2D[] newData = rk4();
+    position = newData[0];
+    velocity = newData[1];
+    if (isPlayer) {
+      System.out.println("direction: " + direction.print() + " norm: " + direction.norm());
+      System.out.println("position: " + position.print() + " norm: " + position.norm());
+      System.out.println("velocity: " + velocity.print() + " norm: " + speed() + " norm (km/h): " + 3.6 * speed());
+      System.out.println("rotationRate: " + rotationRate());
       System.out.println("direction: " + direction.print() + " norm: " + direction.norm());
       System.out.println("rotation: " + rotationAngle);
-      System.out.println("engine torque: " + engineTorque());
-      System.out.println("braking torque: " + -brakingTorque(velocity));
-      System.out.println("traction torque: " + tractionForce(velocity, angularVelocity) * WHEEL_RADIUS);
-      System.out.println("drag force: " + -dragForce() * velocity.norm() * velocity.x);
-      System.out.println("friction force: " + -rollingResistanceForce() * velocity.x);
+      System.out.println("engine force: " + engineForce().print() + " norm: " + engineForce().norm());
+      System.out.println("braking force: " + brakeForce().print() + " norm: " + brakeForce().norm());
+      System.out.println("drag force: " + dragForce().print() + " norm: " + dragForce().norm());
+      System.out.println("friction force: " + rollingResistanceForce().print() + " norm: " + rollingResistanceForce().norm());
+      System.out.println("isOnTrack: " + isOnTrack());
     }
     // direction.rotate(rotationAngle, position);
     // rotationAngle += Math.toRadians(20);
     // position.rotate(rotationAngle);
   }
 
-  private double[] systemODEs(double[] X) {
-    // think if I have to vary the direction too
-    // Vector2D r = X[0];
-    Vector2D v = new Vector2D(X[2], X[3]);
-    double omega = X[4];
-    Vector2D rDot = new Vector2D();
-    Vector2D vDot = new Vector2D();
-    double omegaDot; // we only store the value at omega.x, so we treat it as a double. We do it in this way to simplify the arguments an returns of the functions involved
-    rDot.x = v.x / Track.metersPerPixel;
-    rDot.y = v.y / Track.metersPerPixel;
+  private Vector2D[] systemODEs(Vector2D[] X) {
+    Vector2D rDot = X[1]; // X[1] velocity
+    Vector2D vDot = Vector2D.sum(engineForce(), brakeForce(), dragForce(), rollingResistanceForce());
 
-    vDot.x = (direction.x * engineTorque() / WHEEL_RADIUS - rollingResistanceForce() * v.x - dragForce() * v.norm() * v.x - brakingTorque(v) * direction.x / WHEEL_RADIUS + tractionForce(v, omega) * direction.x) / MASS;
-    vDot.y = (direction.y * engineTorque() / WHEEL_RADIUS - rollingResistanceForce() * v.y - dragForce() * v.norm() * v.y - brakingTorque(v) * direction.y / WHEEL_RADIUS + tractionForce(v, omega) * direction.y) / MASS;
-
-    omegaDot = (engineTorque() - brakingTorque(v) - tractionForce(v, omega) * WHEEL_RADIUS) / (3 * MOMENT_OF_INERTIA);
-
-    // if (orderedPosition == 1) {
-    // System.out.println("vDot: " + vDot.print());
-    // }
-    return new double[] {rDot.x, rDot.y, vDot.x, vDot.y, omegaDot};
+    rDot = rDot.scalarProd(0.8);
+    vDot = vDot.scalarProd(0.8 / m);
+    return new Vector2D[] {rDot, vDot};
   }
 
-  private double engineTorque() {
-    return appliedEngineTorque * ENGINE_CONSTANT;
+  private Vector2D engineForce() {
+    return direction.scalarProd(appliedEngineForce);
   }
 
-  private double tractionForce(Vector2D v, double omega) { // force done by friction force (it is a linear approximation)
-    if (Math.abs(omega) < TOL)
-      return 0;
-    return Math.min(Ct * (omega * WHEEL_RADIUS - v.norm()) / v.norm(), mu * MASS * g);
+  private Vector2D brakeForce() {
+    if (speed() < TOL)
+      return new Vector2D();
+    return velocity.scalarProd(-appliedBrakeForce / speed());
   }
 
-  private double brakingTorque(Vector2D v) {
-    if (v.norm() < TOL)
-      return 0;
-    return appliedBrakeTorque;
+  private Vector2D dragForce() {
+    return velocity.scalarProd(-0.5 * Cd * area * airDensity * speed());
   }
 
-  private double dragForce() {
-    return 0.5 * Cd * AREA * AIR_DENSITY;
+  private Vector2D rollingResistanceForce() {
+    if (isOnTrack())
+      return velocity.scalarProd(-CrTrack);
+    else
+      return velocity.scalarProd(-CrWeed);
   }
 
-  private double rollingResistanceForce() {
-    return Cr;
-  }
-
-  private double[] rk4() { // Runge - Kutta 4
-    double STEP = 0.03;
-    double[] initialPoints = new double[] {position.x, position.y, velocity.x, velocity.y, angularVelocity};
+  private Vector2D[] rk4() { // Runge - Kutta 4
+    double step = 0.03; // step in seconds
+    // double step = 1. / Window.FRAMES; // step in seconds
+    Vector2D[] initialPoints = new Vector2D[] {position, velocity};
 
     // Define the k's of the Runge - Kutta.
-    double[] k1 = systemODEs(initialPoints);
-    double[] k2 = systemODEs(myMath.sum(initialPoints, myMath.scalarProd(STEP / 2, k1)));
-    double[] k3 = systemODEs(myMath.sum(initialPoints, myMath.scalarProd(STEP / 2, k2)));
-    double[] k4 = systemODEs(myMath.sum(initialPoints, myMath.scalarProd(STEP, k3)));
+    Vector2D[] k1 = systemODEs(initialPoints);
+    Vector2D[] k2 = systemODEs(Vector2D.sum(initialPoints, Vector2D.scalarProd(k1, step / 2)));
+    Vector2D[] k3 = systemODEs(Vector2D.sum(initialPoints, Vector2D.scalarProd(k2, step / 2)));
+    Vector2D[] k4 = systemODEs(Vector2D.sum(initialPoints, Vector2D.scalarProd(k3, step)));
 
-    // Evaluate the new position.
-    // avg = Vector2D.scalarProd(Vector2D.sum(k1, Vector2D.scalarProd(k2, 2), Vector2D.scalarProd(k3, 2), k4), 1 / 6);
-    // a = avg[1]; // acceleration = dv/dt
-    // finalPoints = Vector2D.sum(initialPoints, Vector2D.scalarProd(avg, STEP));
-    double[] finalPoints = myMath.sum(initialPoints, myMath.scalarProd(STEP / 6, myMath.sum(k1, myMath.scalarProd(2, k2), myMath.scalarProd(2, k3), k4)));
-
-    // for (int i = 0; i < 5; i++) {
-    // finalPoints[i] = initialPoints.x + (k1[i] + k2[i] + 2 * k3[i] + 2 * k4[i]) * STEP / 6;
-    // }
-
-    // if (orderedPosition == 1) {
-    // System.out.println("initialPoints_x: " + initialPoints[0].print());
-    // System.out.println("finalPoints_x: " + finalPoints[0].print());
-    // System.out.println("initialPoints_v: " + initialPoints[1].print());
-    // System.out.println("finalPoints_v: " + finalPoints[1].print());
-    // }
-    // finalPoints[3] = finalPoints[2]; // we move the omega into the 3rd component
-    // finalPoints[2] = a;
-    // Vector2D rDot = position.sum(new Vector2D().sum(new Vector2D[] {k1[0], k2[0].scalarProd(2), k3[0].scalarProd(2), k4[0]}).scalarProd(STEP / 6));
-    // Vector2D vDot = velocity.sum(new Vector2D().sum(new Vector2D[] {k1[1], k2[1].scalarProd(2), k3[1].scalarProd(2), k4[1]}).scalarProd(STEP / 6));
+    Vector2D[] finalPoints = Vector2D.sum(initialPoints, Vector2D.scalarProd(Vector2D.sum(k1, Vector2D.scalarProd(k2, 2), Vector2D.scalarProd(k3, 2), k4), step / 6));
 
     return finalPoints;
   }
@@ -203,10 +206,10 @@ abstract public class Car {
   public void drawCar(Graphics2D g2) {
     if (img == null) {
       g2.setColor(Color.BLACK);
-      Path2D.Double path = drawRotatedRectangle(position.x - WIDTH / 2, position.y - HEIGHT / 2, WIDTH, HEIGHT, rotationAngle);
+      Path2D.Double path = drawRotatedRectangle(position.x - WIDTH / 2, position.y - HEIGHT / 2, WIDTH, HEIGHT, rotationAngle + initialSteeringAngle);
       g2.fill(path); // oriented towards the right. (-->)
     } else {
-      BufferedImage rotImage = rotateAndScaleImage(img, rotationAngle);
+      BufferedImage rotImage = rotateAndScaleImage(img, rotationAngle + initialSteeringAngle);
       // double x0 = position.x - rotImage.getWidth() / 2;
       // double y0 = position.y - rotImage.getHeight() / 2;
       // Vector2D v0 = new Vector2D(x0, y0);
@@ -275,8 +278,8 @@ abstract public class Car {
 
 class Mercedes extends Car {
 
-  public Mercedes(int orderedPosition, boolean isPlayer) {
-    super(orderedPosition, isPlayer);
+  public Mercedes(int orderedPosition, Track t, boolean isPlayer) {
+    super(orderedPosition, t, isPlayer);
   }
 
   @Override
@@ -286,15 +289,15 @@ class Mercedes extends Car {
 
   @Override
   void setCarFeatures() {
-    MAX_ENGINE_TORQUE = 800;
-    MAX_BRAKING_COEF = 8000;
+    engineMAX = 8000;
+    brakeMAX = 10000;
   }
 }
 
 class Ferrari extends Car {
 
-  public Ferrari(int orderedPosition, boolean isPlayer) {
-    super(orderedPosition, isPlayer);
+  public Ferrari(int orderedPosition, Track t, boolean isPlayer) {
+    super(orderedPosition, t, isPlayer);
   }
 
   @Override
@@ -304,16 +307,16 @@ class Ferrari extends Car {
 
   @Override
   void setCarFeatures() {
-    MAX_ENGINE_TORQUE = 750;
-    MAX_BRAKING_COEF = 9000;
+    engineMAX = 7500;
+    brakeMAX = 11000;
   }
 
 }
 
 class RedBull extends Car {
 
-  public RedBull(int orderedPosition, boolean isPlayer) {
-    super(orderedPosition, isPlayer);
+  public RedBull(int orderedPosition, Track t, boolean isPlayer) {
+    super(orderedPosition, t, isPlayer);
   }
 
   @Override
@@ -323,8 +326,8 @@ class RedBull extends Car {
 
   @Override
   void setCarFeatures() {
-    MAX_ENGINE_TORQUE = 700;
-    MAX_BRAKING_COEF = 10000;
+    engineMAX = 7000;
+    brakeMAX = 12000;
   }
 
 }

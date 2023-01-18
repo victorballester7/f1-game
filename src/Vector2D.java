@@ -1,5 +1,3 @@
-import java.awt.geom.*;
-
 public class Vector2D {
   double x, y;
 
@@ -21,6 +19,13 @@ public class Vector2D {
 
   public Vector2D sum(Vector2D v) {
     return new Vector2D(x + v.x, y + v.y);
+  }
+
+  public static Vector2D sum(Vector2D... vectors) { // arbitrary number of vectors
+    Vector2D result = vectors[0];
+    for (int i = 1; i < vectors.length; i++)
+      result = result.sum(vectors[i]);
+    return result;
   }
 
   public static Vector2D[] sum(Vector2D[]... arrays) { // arbitrary number of arrays
@@ -50,8 +55,12 @@ public class Vector2D {
     return x * v.x + y * v.y;
   }
 
-  public static double angle(Vector2D u, Vector2D v) {
-    return Math.acos(u.dotProduct(v) / (u.norm() * v.norm()));
+  public double det(Vector2D v) { // determinant of [u, v]
+    return x * v.y - y * v.x;
+  }
+
+  public static double signedAngle(Vector2D u, Vector2D v) {
+    return Math.signum(u.det(v)) * Math.acos(u.dotProduct(v) / (u.norm() * v.norm()));
   }
 
   // public void translate(Vector2D v) {
@@ -80,4 +89,8 @@ public class Vector2D {
     this.y = y;
   }
 
+  public void set(Vector2D newVect) {
+    this.x = newVect.x;
+    this.y = newVect.y;
+  }
 }

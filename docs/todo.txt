@@ -3,3 +3,10 @@ a la gespa s'ha d'anar més lent i derrapar més
 fer contador de voltes 
 posar la classificació
 posar un menú incial
+
+HA D'HAVER TRES TIPUS DE FRAMES OF REFERENCES:
+- WORLD (in meters)
+- CAR 
+- SCREEN (same of WORLD but in pixels)
+
+LAST time: I was playing with the button and lights...
