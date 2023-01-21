@@ -69,11 +69,11 @@ abstract public class Car {
     // Math.acos(direction.y / direction.norm()); // dot product
     if (orderedPosition % 2 == 1) { // 1st, 3rd, 5th.. cars
       position.x = Track.finishLinePoint.x - sepFromLine - HEIGHT / 2 - (orderedPosition - 1) * HEIGHT;
-      position.y = Track.finishLinePoint.y + Track.WIDTH / 4;
+      position.y = Track.finishLinePoint.y + Track.widthTrack / 4;
       // position.y = Track.finishLinePoint.y + W (WIDTH / 2 - Track.widthGridSlot) / 2;
     } else {// 2nd, 4th, 6th.. cars
       position.x = Track.finishLinePoint.x - sepFromLine - HEIGHT / 2 - (orderedPosition - 1) * HEIGHT;
-      position.y = Track.finishLinePoint.y + 3 * Track.WIDTH / 4;
+      position.y = Track.finishLinePoint.y + 3 * Track.widthTrack / 4;
       // position.y = Track.finishLinePoint.y + WIDTH / 2 + (WIDTH / 2 - Track.widthGridSlot) / 2;
     }
     initialPosition = position;
@@ -139,19 +139,19 @@ abstract public class Car {
     Vector2D[] newData = rk4();
     position = newData[0];
     velocity = newData[1];
-    if (isPlayer) {
-      System.out.println("direction: " + direction.print() + " norm: " + direction.norm());
-      System.out.println("position: " + position.print() + " norm: " + position.norm());
-      System.out.println("velocity: " + velocity.print() + " norm: " + speed() + " norm (km/h): " + 3.6 * speed());
-      System.out.println("rotationRate: " + rotationRate());
-      System.out.println("direction: " + direction.print() + " norm: " + direction.norm());
-      System.out.println("rotation: " + rotationAngle);
-      System.out.println("engine force: " + engineForce().print() + " norm: " + engineForce().norm());
-      System.out.println("braking force: " + brakeForce().print() + " norm: " + brakeForce().norm());
-      System.out.println("drag force: " + dragForce().print() + " norm: " + dragForce().norm());
-      System.out.println("friction force: " + rollingResistanceForce().print() + " norm: " + rollingResistanceForce().norm());
-      System.out.println("isOnTrack: " + isOnTrack());
-    }
+    // if (isPlayer) {
+    // System.out.println("direction: " + direction.print() + " norm: " + direction.norm());
+    // System.out.println("position: " + position.print() + " norm: " + position.norm());
+    // System.out.println("velocity: " + velocity.print() + " norm: " + speed() + " norm (km/h): " + 3.6 * speed());
+    // System.out.println("rotationRate: " + rotationRate());
+    // System.out.println("direction: " + direction.print() + " norm: " + direction.norm());
+    // System.out.println("rotation: " + rotationAngle);
+    // System.out.println("engine force: " + engineForce().print() + " norm: " + engineForce().norm());
+    // System.out.println("braking force: " + brakeForce().print() + " norm: " + brakeForce().norm());
+    // System.out.println("drag force: " + dragForce().print() + " norm: " + dragForce().norm());
+    // System.out.println("friction force: " + rollingResistanceForce().print() + " norm: " + rollingResistanceForce().norm());
+    // System.out.println("isOnTrack: " + isOnTrack());
+    // }
     // direction.rotate(rotationAngle, position);
     // rotationAngle += Math.toRadians(20);
     // position.rotate(rotationAngle);
@@ -159,10 +159,8 @@ abstract public class Car {
 
   private Vector2D[] systemODEs(Vector2D[] X) {
     Vector2D rDot = X[1]; // X[1] velocity
-    Vector2D vDot = Vector2D.sum(engineForce(), brakeForce(), dragForce(), rollingResistanceForce());
+    Vector2D vDot = Vector2D.sum(engineForce(), brakeForce(), dragForce(), rollingResistanceForce()).scalarProd(1 / m);
 
-    rDot = rDot.scalarProd(0.8);
-    vDot = vDot.scalarProd(0.8 / m);
     return new Vector2D[] {rDot, vDot};
   }
 

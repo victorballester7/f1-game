@@ -68,7 +68,9 @@ import java.awt.geom.Point2D;
 // ------------------------------------
 abstract public class Track {
   // we assume by the moment that all tracks start in a straight line with a long straight pointing to the right --->.
-  public static double WIDTH;
+  public static double widthTrack;
+  // public static double width;
+  // public static double height;
   public static Point2D.Double finishLinePoint = new Point2D.Double();
   public static int widthFinishLine = 25;
   public static int marginGridSlot = 2;
@@ -80,6 +82,8 @@ abstract public class Track {
   public Path2D.Double outerPath = new Path2D.Double();
   public Path2D.Double bestTrajectory = new Path2D.Double();
   public Area area;
+  private static final double margin = 100;
+  public Rectangle2D bounds;
   public Color trackColor = new Color(100, 100, 100);
   public Vector2D startDirection;
   protected double x0, y0;
@@ -98,17 +102,18 @@ abstract public class Track {
   // area.subtract(new Area(innerPath));
   // }
 
-  public Track(double WIDTH, double x0, double y0, Vector2D startDirection) {
-    Track.WIDTH = WIDTH;
+  public Track(double widthTrack, double x0, double y0, Vector2D startDirection) {
+    Track.widthTrack = widthTrack;
     this.x0 = x0;
     this.y0 = y0;
     this.startDirection = startDirection;
     setPath(path, 0);
-    setPath(innerPath, -WIDTH / 2);
-    setPath(outerPath, WIDTH / 2);
+    setPath(innerPath, -widthTrack / 2);
+    setPath(outerPath, widthTrack / 2);
     setBestTrajectory(bestTrajectory);
     area = new Area(outerPath);
     area.subtract(new Area(innerPath));
+    bounds = setScaledMargins(area.getBounds2D());
     setFinishLinePoint();
   }
 
@@ -118,9 +123,28 @@ abstract public class Track {
 
   abstract void setFinishLinePoint();
 
+  private Rectangle2D setScaledMargins(Rectangle2D rect) {
+    Rectangle2D newRect = new Rectangle2D.Double(rect.getX() - margin, rect.getY() - margin, rect.getWidth() + 2 * margin, rect.getHeight() + 2 * margin);
+
+    // correct the aspect ratio
+    double ratio = newRect.getWidth() / newRect.getHeight();
+    double newLength, newCoordinate;
+    if (ratio >= Game.screenRatio) { // circuit is too wide
+      newLength = newRect.getWidth() / Game.screenRatio;
+      newCoordinate = newRect.getY() - (newLength - newRect.getHeight()) / 2;
+      newRect.setRect(new Rectangle2D.Double(newRect.getX(), newCoordinate, newRect.getWidth(), newLength));
+    } else { // circuit is too high
+      newLength = Game.screenRatio * newRect.getHeight();
+      newCoordinate = newRect.getX() - (newLength - newRect.getWidth()) / 2;
+      newRect.setRect(new Rectangle2D.Double(newCoordinate, newRect.getY(), newLength, newRect.getHeight()));
+    }
+
+    return newRect;
+  }
+
   private void paintFinishLine(Graphics2D g2) {
     int verticalNumSquares = 20;
-    double sideLength = WIDTH / verticalNumSquares;
+    double sideLength = widthTrack / verticalNumSquares;
     int horizontalNumSquares = (int) Math.round(widthFinishLine / sideLength);
     for (int i = 0; i < horizontalNumSquares; i++) {
       for (int j = 0; j < verticalNumSquares; j++) {
@@ -165,6 +189,8 @@ abstract public class Track {
     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // better resolution
     g2.setColor(trackColor);
     g2.fill(area);
+    g2.setColor(Color.RED);
+    g2.draw(bounds);
     paintGrid(Game.cars, g2);
     g2.draw(bestTrajectory);
   }
@@ -193,7 +219,7 @@ class OvalTrack extends Track {
   @Override
   void setBestTrajectory(Path2D path) {
     double margin = 10;
-    double incr = WIDTH / 2;
+    double incr = widthTrack / 2;
     double EPS = incr / 3;
     double incr_curve = incr + EPS;
     double finalBrakingPoint = incr_curve + incr - 30;
@@ -208,7 +234,7 @@ class OvalTrack extends Track {
   @Override
   void setFinishLinePoint() {
     finishLinePoint.x = x0 + 3 * straightLength / 4;
-    finishLinePoint.y = y0 - WIDTH / 2;
+    finishLinePoint.y = y0 - widthTrack / 2;
   }
 }
 
