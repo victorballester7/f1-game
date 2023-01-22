@@ -1,12 +1,14 @@
+import java.awt.geom.*;
+
 public class Vector2D {
   double x, y;
 
   public Vector2D(double x, double y) {
-    setCoords(x, y);
+    set(x, y);
   }
 
   public Vector2D() {
-    setCoords(0, 0);
+    set(0, 0);
   }
 
   public double distance(Vector2D p) {
@@ -84,7 +86,7 @@ public class Vector2D {
     return "(" + x + ", " + y + ")";
   }
 
-  public void setCoords(double x, double y) {
+  public void set(double x, double y) {
     this.x = x;
     this.y = y;
   }
@@ -92,5 +94,13 @@ public class Vector2D {
   public void set(Vector2D newVect) {
     this.x = newVect.x;
     this.y = newVect.y;
+  }
+
+  public Point2D.Double toPoint() {
+    return new Point2D.Double(x, y);
+  }
+
+  public static Vector2D toVector(Point2D p) {
+    return new Vector2D(p.getX(), p.getY());
   }
 }

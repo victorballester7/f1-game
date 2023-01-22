@@ -2,7 +2,7 @@ import java.awt.*;
 import javax.swing.*;
 
 class myButton extends JButton {
-  private Color b = new Color(255, 74, 74);
+  private Color b = Game.myColor;
   private Color bPressed = new Color(161, 39, 39);
   private Color f = new Color(240, 240, 240);
   private Color fPressed = f;
@@ -11,31 +11,38 @@ class myButton extends JButton {
   private String text, text2;
   private static final int fontSize = 20;
   private static final int imageSize = 30; // assuming they are square
+  private String position;
   private int x; // x-coordinate of the center of the button
   private int y; // y-coordinate of the center of the button
   public boolean isPressed = false;
 
-  public myButton(String text, Image img, int x, int y) {
+  public myButton(JFrame f, String text, Image img, String position) {
     super(text);
     this.text = text;
     this.img = new ImageIcon(img.getScaledInstance(imageSize, imageSize, Image.SCALE_DEFAULT));
-    this.x = x;
-    this.y = y;
-    setConfig();
+    this.position = position;
+    setConfig(f);
   }
 
-  void setConfig() {
+  void setConfig(JFrame f) {
     setIcon(img);
     setFont(new Font("Arial", Font.BOLD, fontSize));
     setFocusable(false); // in order to use the keys (not for the button but for the rest of the game). Otherwise the keylistener loses focus to the JButton.
     setBorderPainted(false); // remove painted border when hovering mouse above it
     setContentAreaFilled(false);
     setSize(getPreferredSize().width, getPreferredSize().height);
-    System.out.println("width: " + getWidth());
-    System.out.println("height: " + getHeight());
-    setBounds(x - getWidth() / 2, y - getHeight() / 2, getWidth(), getHeight());
-    // setVerticalAlignment(SwingConstants.CENTER);
-    // setHorizontalAlignment(SwingConstants.CENTER);
+    updateSize(f);
+  }
+
+  void updateSize(JFrame f) {
+    if (position == "center") {
+      x = f.getWidth() / 2 - getWidth() / 2;
+      y = f.getHeight() / 30;
+    } else if (position == "left") {
+      x = f.getWidth() / 50;
+      y = f.getHeight() / 30;
+    }
+    setBounds(x, y, getWidth(), getHeight());
   }
 
   void addSecondTextImage(String text2, Image img2) {

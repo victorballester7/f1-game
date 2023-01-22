@@ -4,9 +4,5 @@ fer contador de voltes
 posar la classificació
 posar un menú incial
 
-HA D'HAVER TRES TIPUS DE FRAMES OF REFERENCES:
-- WORLD (in meters)
-- CAR 
-- SCREEN (same of WORLD but in pixels)
 
-LAST time: I was playing with the button and lights...
+LAST time: I was playing with the new getTangentVector() function. COnsider using degree-2 Bezier curves as it is easier to compute the time t given a position (x, y), and then compute the tangent vector. 

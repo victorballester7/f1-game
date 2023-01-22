@@ -1,125 +1,48 @@
 import java.awt.*;
 import java.awt.geom.*;
-import java.awt.geom.Point2D;
 
-// abstract class Segment extends Track {
-// Point2D p01;
-// int length;
-// double orientationAngle;
-
-// public Segment(Point2D p01, int length, double angleOrientation) {
-// this.p01 = p01;
-// this.length = length;
-// this.orientationAngle = angleOrientation;
-// }
-
-// public Point2D[] getInitialPoints() {
-// int new_x = p01.x + width;
-// int new_y = p01.y;
-// Point2D p02 = new Point2D(new_x, new_y);
-// Point2D[] p = new Point2D[] {p01, p02.rotate(orientationAngle)};
-// return p;
-// }
-
-// abstract public Point2D[] getEndPoints();
-// }
-
-// class StraightLine extends Segment {
-// public StraightLine(Point2D p01, int length, double angleOrientation) {
-// super(p01, length, angleOrientation);
-// }
-
-// @Override
-// public Point2D[] getEndPoints() {
-// Point2D p11 = new Point2D(p01.x, p01.y + length);
-// Point2D p12 = new Point2D(p01.x + width, p01.y + length);
-// Point2D[] p = new Point2D[] {p11.rotate(orientationAngle), p12.rotate(orientationAngle)};
-// return p;
-// }
-
-// }
-
-// class CurveClockWise extends Segment {
-// int SteeringAngle;
-
-// public CurveClockWise(Point2D p01, int length, double angleOrientation, int SteeringAngle) {
-// super(p01, length, angleOrientation);
-// this.SteeringAngle = SteeringAngle;
-// }
-
-// @Override
-// public Point2D[] getEndPoints() {
-// double centralRadius = length / SteeringAngle;
-// double innerRadius = centralRadius - width / 2;
-// double outerRadius = centralRadius + width / 2;
-// int new_x = p01.x + width;
-// int new_y = p01.y;
-// Point2D p02 = new Point2D(new_x, new_y);
-// Point2D p11 = p01.rotate(-SteeringAngle);
-// Point2D p12 = p[1].rotate(-SteeringAngle);
-// Point2D[] p_rot = new Point2D[] {p11.rotate(orientationAngle), p12.rotate(orientationAngle)};
-// return p_rot;
-// }
-// }
-// // public StraightLine(Point2D p1, Point2D p2, int length) {
-// // super(p1, p2, length);
-// // }
-// // }
-// ------------------------------------
 abstract public class Track {
   // we assume by the moment that all tracks start in a straight line with a long straight pointing to the right --->.
   public static double widthTrack;
   // public static double width;
   // public static double height;
-  public static Point2D.Double finishLinePoint = new Point2D.Double();
-  public static int widthFinishLine = 25;
-  public static int marginGridSlot = 2;
-  public static int widthGridSlot = Car.WIDTH + 2 * marginGridSlot;
-  public static int lengthGridSlot = Car.HEIGHT / 2;
-  public static final double pixelsPerMeter = 50;
+  public static Vector2D finishLinePoint = new Vector2D();
+  public Area blackSquaresfinishLine = new Area();
+  public Area whiteSquaresfinishLine = new Area();
+  public Path2D grid = new Path2D.Double();;
+  public static double widthFinishLine = 4;
+  public static double marginGridSlot = 0.25;
+  public static double widthGridSlot = Car.width + 2 * marginGridSlot;
+  public static double lengthGridSlot = Car.length / 2;
   public Path2D.Double path = new Path2D.Double();
   public Path2D.Double innerPath = new Path2D.Double();
   public Path2D.Double outerPath = new Path2D.Double();
   public Path2D.Double bestTrajectory = new Path2D.Double();
   public Area area;
-  private static final double margin = 100;
+  private static double margin;
   public Rectangle2D bounds;
   public Color trackColor = new Color(100, 100, 100);
   public Vector2D startDirection;
   protected double x0, y0;
-  // public Track(double x0, double y0) {
-  // setPath(path, x0, y0, 0);
-  // setPath(innerPath, x0, y0, -width / 2);
-  // setPath(outerPath, x0, y0, width / 2);
-  // }
-
-  // public Track(int width, double x0, double y0) {
-  // this.width = width;
-  // setPath(path, x0, y0, 0);
-  // setPath(innerPath, x0, y0, -width / 2);
-  // setPath(outerPath, x0, y0, width / 2);
-  // area = new Area(outerPath);
-  // area.subtract(new Area(innerPath));
-  // }
 
   public Track(double widthTrack, double x0, double y0, Vector2D startDirection) {
     Track.widthTrack = widthTrack;
+    margin = 2 * widthTrack;
     this.x0 = x0;
     this.y0 = y0;
     this.startDirection = startDirection;
     setPath(path, 0);
     setPath(innerPath, -widthTrack / 2);
     setPath(outerPath, widthTrack / 2);
-    setBestTrajectory(bestTrajectory);
+    setPath(bestTrajectory, widthTrack / 2);
     area = new Area(outerPath);
     area.subtract(new Area(innerPath));
     bounds = setScaledMargins(area.getBounds2D());
     setFinishLinePoint();
+    createGrid();
   }
 
   abstract void setPath(Path2D path, double incr);
-
-  abstract void setBestTrajectory(Path2D path);
 
   abstract void setFinishLinePoint();
 
@@ -142,31 +65,53 @@ abstract public class Track {
     return newRect;
   }
 
-  private void paintFinishLine(Graphics2D g2) {
+  // private void paintFinishLine(Graphics2D g2) {
+  // int verticalNumSquares = 20;
+  // double sideLength = widthTrack / verticalNumSquares;
+  // int horizontalNumSquares = (int) Math.round(widthFinishLine / sideLength);
+  // for (int i = 0; i < horizontalNumSquares; i++) {
+  // for (int j = 0; j < verticalNumSquares; j++) {
+  // if ((i + j) % 2 == 1)
+  // g2.setColor(Color.WHITE);
+  // else
+  // g2.setColor(Color.BLACK);
+  // g2.fill(new Rectangle2D.Double(finishLinePoint.x + i * sideLength, finishLinePoint.y + j * sideLength, sideLength, sideLength));
+  // }
+  // }
+  // }
+
+  private void createFinishLine() {
     int verticalNumSquares = 20;
     double sideLength = widthTrack / verticalNumSquares;
     int horizontalNumSquares = (int) Math.round(widthFinishLine / sideLength);
     for (int i = 0; i < horizontalNumSquares; i++) {
       for (int j = 0; j < verticalNumSquares; j++) {
         if ((i + j) % 2 == 1)
-          g2.setColor(Color.WHITE);
+          whiteSquaresfinishLine.add(new Area(new Rectangle2D.Double(finishLinePoint.x + i * sideLength, finishLinePoint.y + j * sideLength, sideLength, sideLength)));
         else
-          g2.setColor(Color.BLACK);
-        g2.fill(new Rectangle2D.Double(finishLinePoint.x + i * sideLength, finishLinePoint.y + j * sideLength, sideLength, sideLength));
+          blackSquaresfinishLine.add(new Area(new Rectangle2D.Double(finishLinePoint.x + i * sideLength, finishLinePoint.y + j * sideLength, sideLength, sideLength)));
       }
     }
   }
 
-  private void paintGrid(Car[] cars, Graphics2D g2) {
-    paintFinishLine(g2);
-    // for (int i = 0; i < Game.NumCars; i++) {
-    for (Car c : cars) {
-      paintCarGridSlot(new Point2D.Double(c.initialPosition.x + Car.HEIGHT / 2, c.initialPosition.y - Car.WIDTH / 2), g2);
+  // private void paintGrid(Car[] cars, Graphics2D g2) {
+  // paintFinishLine(g2);
+  // for (Car c : cars) {
+  // paintCarGridSlot(new Point2D.Double(c.initialPosition.x + Car.HEIGHT / 2, c.initialPosition.y - Car.WIDTH / 2), g2);
+  // }
+  // }
+
+  private void createGrid() {
+    createFinishLine();
+    Vector2D v;
+    for (int i = 1; i <= Game.NumCars; i++) {
+      v = Car.setInitialPosition(startDirection, i);
+      createCarGridSlot(new Vector2D(v.x + Car.length / 2, v.y - Car.width / 2));
     }
   }
 
-  private void paintCarGridSlot(Point2D.Double p, Graphics2D g2) {
-    // Point p is the one marked with a circle in the figure below.
+  private void createCarGridSlot(Vector2D p) {
+    // The point P is the right top edge of the car and th point (x0, y0) is the one marked with a circle in the figure below.
     // Ignore the points in the middle (think they are invisible)
     // ---o
     // ...|
@@ -181,26 +126,33 @@ abstract public class Track {
     path.lineTo(x0, y0);
     path.lineTo(x0, y0 + widthGridSlot);
     path.lineTo(x0 - lengthGridSlot, y0 + widthGridSlot);
-    g2.setColor(Color.WHITE);
-    g2.draw(path);
+    grid.append(path, false);
   }
 
-  public void drawTrack(Graphics2D g2) {
-    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // better resolution
+  // get the tangent vector of a cubic Bézier curve.
+  // public Vector2D getTangentVector(Vector2D p, double[] curve, boolean ... isLine){
+
+  // }
+
+  public void drawTrack(Graphics2D g2, AffineTransform at) {
     g2.setColor(trackColor);
-    g2.fill(area);
-    g2.setColor(Color.RED);
-    g2.draw(bounds);
-    paintGrid(Game.cars, g2);
-    g2.draw(bestTrajectory);
+    g2.fill(at.createTransformedShape(area));
+    g2.setColor(Color.BLACK);
+    g2.fill(at.createTransformedShape(blackSquaresfinishLine));
+    g2.setColor(Color.WHITE);
+    g2.fill(at.createTransformedShape(whiteSquaresfinishLine));
+    g2.draw(at.createTransformedShape(grid));
+    // g2.draw(at.createTransformedShape(bounds));
+    g2.setColor(Color.YELLOW);
+    g2.draw(at.createTransformedShape(bestTrajectory));
   }
 }
 
 class OvalTrack extends Track {
-  private static double straightLength = 1300, curveWidth = 400;
+  private static final double straightLength = 1006, curveWidth = 400;
 
-  public OvalTrack(double WIDTH, double x0, double y0, Vector2D startDirection) {
-    super(WIDTH, x0, y0, startDirection);
+  public OvalTrack(double widthTrack, double x0, double y0, Vector2D startDirection) {
+    super(widthTrack, x0, y0, startDirection);
   }
 
   @Override
@@ -208,26 +160,18 @@ class OvalTrack extends Track {
     // in order for the joining points to be of class C^1 (smooth) we need that (P3 - P2) = (Q1 - Q2), where Pi are the points of the first Bézier curve and Qi are the points of the second Bézier curve.
     double EPS = incr / 3;
     double incr_curve = incr + EPS;
-    path.moveTo(x0, y0 - incr);
-    path.lineTo(x0 + straightLength, y0 - incr);
-    path.curveTo(x0 + straightLength + 200 + incr_curve, y0 - incr, x0 + straightLength + 200 + incr_curve, y0 + curveWidth + incr, x0 + straightLength, y0 + curveWidth + incr);
-    path.lineTo(x0, y0 + curveWidth + incr);
-    path.curveTo(x0 - 200 - incr_curve, y0 + curveWidth + incr, x0 - 200 - incr_curve, y0 - incr, x0, y0 - incr);
-    path.closePath();
-  }
-
-  @Override
-  void setBestTrajectory(Path2D path) {
-    double margin = 10;
-    double incr = widthTrack / 2;
-    double EPS = incr / 3;
-    double incr_curve = incr + EPS;
-    double finalBrakingPoint = incr_curve + incr - 30;
+    double margin = 0;
+    double finalBrakingPoint = 0;
+    double curvature = straightLength / 4;
+    if (path == bestTrajectory) {
+      margin = widthTrack / 5;
+      finalBrakingPoint = incr_curve + incr - straightLength / 150;
+    }
     path.moveTo(x0 + finalBrakingPoint, y0 - incr + margin);
     path.lineTo(x0 + straightLength - finalBrakingPoint, y0 - incr + margin);
-    path.curveTo(x0 + straightLength + 200 + incr_curve - finalBrakingPoint, y0 - incr + margin, x0 + straightLength + 200 + incr_curve - finalBrakingPoint, y0 + curveWidth + incr - margin, x0 + straightLength - finalBrakingPoint, y0 + curveWidth + incr - margin);
+    path.curveTo(x0 + straightLength + curvature + incr_curve - finalBrakingPoint, y0 - incr + margin, x0 + straightLength + curvature + incr_curve - finalBrakingPoint, y0 + curveWidth + incr - margin, x0 + straightLength - finalBrakingPoint, y0 + curveWidth + incr - margin);
     path.lineTo(x0 + finalBrakingPoint, y0 + curveWidth + incr - margin);
-    path.curveTo(x0 - 200 - incr_curve + finalBrakingPoint, y0 + curveWidth + incr - margin, x0 - 200 - incr_curve + finalBrakingPoint, y0 - incr + margin, x0 + finalBrakingPoint, y0 - incr + margin);
+    path.curveTo(x0 - curvature - incr_curve + finalBrakingPoint, y0 + curveWidth + incr - margin, x0 - curvature - incr_curve + finalBrakingPoint, y0 - incr + margin, x0 + finalBrakingPoint, y0 - incr + margin);
     path.closePath();
   }
 

@@ -1,5 +1,5 @@
 public class Window {
-  public static final int FRAMES = 60;
+  public static final int FPS = 60;
   Game game;
 
   public Window() {
@@ -7,7 +7,7 @@ public class Window {
     game.show();
     while (true) {
       game.run();
-      Game.sleep(1000 / FRAMES);
+      Game.sleep(1000 / FPS);
     }
     // SwingUtilities.invokeLater(new Runnable() {
     // @Override
