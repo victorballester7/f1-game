@@ -52,12 +52,12 @@ abstract public class Track {
     // correct the aspect ratio
     double ratio = newRect.getWidth() / newRect.getHeight();
     double newLength, newCoordinate;
-    if (ratio >= Game.screenRatio) { // circuit is too wide
-      newLength = newRect.getWidth() / Game.screenRatio;
+    if (ratio >= Window.screenRatio) { // circuit is too wide
+      newLength = newRect.getWidth() / Window.screenRatio;
       newCoordinate = newRect.getY() - (newLength - newRect.getHeight()) / 2;
       newRect.setRect(new Rectangle2D.Double(newRect.getX(), newCoordinate, newRect.getWidth(), newLength));
     } else { // circuit is too high
-      newLength = Game.screenRatio * newRect.getHeight();
+      newLength = Window.screenRatio * newRect.getHeight();
       newCoordinate = newRect.getX() - (newLength - newRect.getWidth()) / 2;
       newRect.setRect(new Rectangle2D.Double(newCoordinate, newRect.getY(), newLength, newRect.getHeight()));
     }
