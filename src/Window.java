@@ -4,7 +4,6 @@ import java.awt.geom.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.BorderFactory.*;
 import java.io.*;
 
 public class Window implements KeyListener, ActionListener {

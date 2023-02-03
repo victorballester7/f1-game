@@ -33,7 +33,7 @@ public class Game {
   }
 
   private void initialize() {
-    t = new OvalTrack(17, 300, 300, new Vector2D(1, 0));
+    t = new Indianapolis(17, 300, 300, new Vector2D(1, 0));
     widthCarView = Track.widthTrack * 2;
 
     cars[0] = new McLaren(1, t, true);

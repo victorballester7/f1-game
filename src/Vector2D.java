@@ -19,14 +19,29 @@ public class Vector2D {
     return distance(new Vector2D());
   }
 
+  public Vector2D clone() {
+    return new Vector2D(x, y);
+  }
+
   public Vector2D sum(Vector2D v) {
     return new Vector2D(x + v.x, y + v.y);
+  }
+
+  public Vector2D substract(Vector2D v) {
+    return new Vector2D(x - v.x, y - v.y);
   }
 
   public static Vector2D sum(Vector2D... vectors) { // arbitrary number of vectors
     Vector2D result = vectors[0];
     for (int i = 1; i < vectors.length; i++)
       result = result.sum(vectors[i]);
+    return result;
+  }
+
+  public static Vector2D substract(Vector2D... vectors) { // arbitrary number of vectors
+    Vector2D result = vectors[0];
+    for (int i = 1; i < vectors.length; i++)
+      result = result.substract(vectors[i]);
     return result;
   }
 
@@ -82,7 +97,7 @@ public class Vector2D {
     return new Vector2D(new_x, new_y);
   }
 
-  public String print() {
+  public String toString() {
     return "(" + x + ", " + y + ")";
   }
 

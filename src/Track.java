@@ -4,8 +4,7 @@ import java.awt.geom.*;
 abstract public class Track {
   // we assume by the moment that all tracks start in a straight line with a long straight pointing to the right --->.
   public static double widthTrack;
-  // public static double width;
-  // public static double height;
+  // customizations
   public static Vector2D finishLinePoint = new Vector2D();
   public Area blackSquaresfinishLine = new Area();
   public Area whiteSquaresfinishLine = new Area();
@@ -14,12 +13,19 @@ abstract public class Track {
   public static double marginGridSlot = 0.25;
   public static double widthGridSlot = Car.width + 2 * marginGridSlot;
   public static double lengthGridSlot = Car.length / 2;
-  public Path2D.Double path = new Path2D.Double();
-  public Path2D.Double innerPath = new Path2D.Double();
-  public Path2D.Double outerPath = new Path2D.Double();
-  public Path2D.Double bestTrajectory = new Path2D.Double();
-  public Area area;
-  private static double margin;
+  // lane paths
+  // public Path2D.Double path = new Path2D.Double();
+  // public Path2D.Double innerPath = new Path2D.Double();
+  // public Path2D.Double outerPath = new Path2D.Double();
+  // public Path2D.Double bestTrajectory = new Path2D.Double();
+  // public Path2D.Double innerBestTrajectory = new Path2D.Double();
+  // public Path2D.Double outerBestTrajectory = new Path2D.Double();
+  // public Area areaTrack;
+  // public Area areaBestTrajectory;
+  public Path path;
+  public Path bestTrajectory;
+  public static double marginWithWeed;
+  public static double bestTrajectoryWidth = Car.width;
   public Rectangle2D bounds;
   public Color trackColor = new Color(100, 100, 100);
   public Vector2D startDirection;
@@ -27,27 +33,26 @@ abstract public class Track {
 
   public Track(double widthTrack, double x0, double y0, Vector2D startDirection) {
     Track.widthTrack = widthTrack;
-    margin = 2 * widthTrack;
+    marginWithWeed = 2 * widthTrack;
     this.x0 = x0;
     this.y0 = y0;
     this.startDirection = startDirection;
-    setPath(path, 0);
-    setPath(innerPath, -widthTrack / 2);
-    setPath(outerPath, widthTrack / 2);
-    setPath(bestTrajectory, widthTrack / 2);
-    area = new Area(outerPath);
-    area.subtract(new Area(innerPath));
-    bounds = setScaledMargins(area.getBounds2D());
+
+    path = setPath();
+    bestTrajectory = setBestPath();
+    bounds = setScaledMargins(path.area.getBounds2D());
     setFinishLinePoint();
     createGrid();
   }
 
-  abstract void setPath(Path2D path, double incr);
+  abstract public Path setPath();
+
+  abstract public Path setBestPath();
 
   abstract void setFinishLinePoint();
 
   private Rectangle2D setScaledMargins(Rectangle2D rect) {
-    Rectangle2D newRect = new Rectangle2D.Double(rect.getX() - margin, rect.getY() - margin, rect.getWidth() + 2 * margin, rect.getHeight() + 2 * margin);
+    Rectangle2D newRect = new Rectangle2D.Double(rect.getX() - marginWithWeed, rect.getY() - marginWithWeed, rect.getWidth() + 2 * marginWithWeed, rect.getHeight() + 2 * marginWithWeed);
 
     // correct the aspect ratio
     double ratio = newRect.getWidth() / newRect.getHeight();
@@ -136,7 +141,7 @@ abstract public class Track {
 
   public void drawTrack(Graphics2D g2, AffineTransform at) {
     g2.setColor(trackColor);
-    g2.fill(at.createTransformedShape(area));
+    g2.fill(at.createTransformedShape(path.area));
     g2.setColor(Color.BLACK);
     g2.fill(at.createTransformedShape(blackSquaresfinishLine));
     g2.setColor(Color.WHITE);
@@ -144,42 +149,152 @@ abstract public class Track {
     g2.draw(at.createTransformedShape(grid));
     // g2.draw(at.createTransformedShape(bounds));
     g2.setColor(Color.YELLOW);
-    g2.draw(at.createTransformedShape(bestTrajectory));
+    g2.fill(at.createTransformedShape(bestTrajectory.area));
+    // g2.draw(at.createTransformedShape(bestTrajectory.path));
+    // g2.draw(at.createTransformedShape(path.path));
+    g2.setColor(Color.BLUE);
+    // g2.draw(at.createTransformedShape(bestTrajectory.innerPath));
+    // g2.draw(at.createTransformedShape(path.innerPath));
+    g2.setColor(Color.PINK);
+    // g2.draw(at.createTransformedShape(bestTrajectory.outerPath));
+    // g2.draw(at.createTransformedShape(path.outerPath));
+
+    // g2.setColor(Color.RED);
+    // for (Vector2D v : path.joiningPoints) {
+    // g2.fill(at.createTransformedShape(new Ellipse2D.Double(v.x, v.y, 20, 20)));
+    // }
   }
 }
 
-class OvalTrack extends Track {
-  private static final double straightLength = 1006, curveWidth = 400;
+class Indianapolis extends Track {
+  private static final double longStraight = 1006;
+  private static final double shortStraight = 201;
+  private static final double curveWidth = 300;
 
-  public OvalTrack(double widthTrack, double x0, double y0, Vector2D startDirection) {
+  public Indianapolis(double widthTrack, double x0, double y0, Vector2D startDirection) {
     super(widthTrack, x0, y0, startDirection);
   }
 
+  // Joint point line (Pi) - cubic curve (Qi):
+  // Q0 = P1
+  // Q1 = (P1 - P0) / 3 + P1 = 4 / 3 * P1 - P0 / 3
+  // Q2 = 2 * Q1 - Q0 = 5 / 3 * P1 -
+
   @Override
-  void setPath(Path2D path, double incr) {
-    // in order for the joining points to be of class C^1 (smooth) we need that (P3 - P2) = (Q1 - Q2), where Pi are the points of the first Bézier curve and Qi are the points of the second Bézier curve.
-    double EPS = incr / 3;
-    double incr_curve = incr + EPS;
-    double margin = 0;
-    double finalBrakingPoint = 0;
-    double curvature = straightLength / 4;
-    if (path == bestTrajectory) {
-      margin = widthTrack / 5;
-      finalBrakingPoint = incr_curve + incr - straightLength / 150;
-    }
-    path.moveTo(x0 + finalBrakingPoint, y0 - incr + margin);
-    path.lineTo(x0 + straightLength - finalBrakingPoint, y0 - incr + margin);
-    path.curveTo(x0 + straightLength + curvature + incr_curve - finalBrakingPoint, y0 - incr + margin, x0 + straightLength + curvature + incr_curve - finalBrakingPoint, y0 + curveWidth + incr - margin, x0 + straightLength - finalBrakingPoint, y0 + curveWidth + incr - margin);
-    path.lineTo(x0 + finalBrakingPoint, y0 + curveWidth + incr - margin);
-    path.curveTo(x0 - curvature - incr_curve + finalBrakingPoint, y0 + curveWidth + incr - margin, x0 - curvature - incr_curve + finalBrakingPoint, y0 - incr + margin, x0 + finalBrakingPoint, y0 - incr + margin);
-    path.closePath();
+  public Path setPath() { // assume the first segment is a line
+    // double EPS = incr / 3;
+    // double incr_curve = widthTrack / 4;
+    // double curvature = longStraight / 4;
+
+    Path myPath = new Path(x0, y0, 0, -widthTrack / 2);
+
+    Vector2D p = new Vector2D(x0 + longStraight, y0);
+    Vector2D diff = new Vector2D(1, 0);
+    Vector2D incr = new Vector2D(0, -widthTrack / 2);
+    double diffForce = 600;
+    myPath.addCurve(p, diff, diffForce, incr, false);
+
+    p.set(x0 + longStraight + curveWidth, y0 + curveWidth);
+    diff.set(0, 1);
+    incr.set(widthTrack / 2, 0);
+    myPath.addCurve(p, diff, diffForce, incr, true);
+
+    p.set(x0 + longStraight + curveWidth, y0 + shortStraight + curveWidth);
+    diff.set(0, 1);
+    incr.set(widthTrack / 2, 0);
+    myPath.addCurve(p, diff, diffForce, incr, false);
+
+    p.set(x0 + longStraight, y0 + shortStraight + 2 * curveWidth);
+    diff.set(-1, 0);
+    incr.set(0, widthTrack / 2);
+    myPath.addCurve(p, diff, diffForce, incr, true);
+
+    p.set(x0, y0 + shortStraight + 2 * curveWidth);
+    diff.set(-1, 0);
+    incr.set(0, widthTrack / 2);
+    myPath.addCurve(p, diff, diffForce, incr, false);
+
+    p.set(x0 - curveWidth, y0 + shortStraight + curveWidth);
+    diff.set(0, -1);
+    incr.set(-widthTrack / 2, 0);
+    myPath.addCurve(p, diff, diffForce, incr, true);
+
+    p.set(x0 - curveWidth, y0 + curveWidth);
+    diff.set(0, -1);
+    incr.set(-widthTrack / 2, 0);
+    myPath.addCurve(p, diff, diffForce, incr, false);
+
+    p.set(x0, y0);
+    diff.set(1, 0);
+    incr.set(0, -widthTrack / 2);
+    myPath.addCurve(p, diff, diffForce, incr, true);
+
+    myPath.finishPath();
+
+    return myPath;
+  }
+
+  @Override
+  public Path setBestPath() {
+    // double EPS = incr / 3;
+    // double incr_curve = incr + EPS;
+    double margin = widthTrack / 5;
+    double extra = widthTrack / 2 - margin;
+    // double finalBrakingPoint = incr_curve + incr - longStraight / 150;
+    // double curvature = longStraight / 4;
+    Path myPath = new Path(x0, y0 - extra, 0, -bestTrajectoryWidth / 2);
+    Vector2D p = new Vector2D(x0 + longStraight, y0 - extra);
+    Vector2D diff = new Vector2D(1, 0);
+    Vector2D incr = new Vector2D(0, -bestTrajectoryWidth / 2);
+    double diffForce = 550;
+    myPath.addCurve(p, diff, diffForce, incr, false);
+
+    p.set(x0 + longStraight + curveWidth + extra, y0 + curveWidth);
+    diff.set(0, 1);
+    incr.set(bestTrajectoryWidth / 2, 0);
+    myPath.addCurve(p, diff, diffForce, incr, true);
+
+    p.set(x0 + longStraight + curveWidth + extra, y0 + shortStraight + curveWidth);
+    diff.set(0, 1);
+    incr.set(bestTrajectoryWidth / 2, 0);
+    myPath.addCurve(p, diff, diffForce, incr, false);
+
+    p.set(x0 + longStraight, y0 + shortStraight + 2 * curveWidth + extra);
+    diff.set(-1, 0);
+    incr.set(0, bestTrajectoryWidth / 2);
+    myPath.addCurve(p, diff, diffForce, incr, true);
+
+    p.set(x0, y0 + shortStraight + 2 * curveWidth + extra);
+    diff.set(-1, 0);
+    incr.set(0, bestTrajectoryWidth / 2);
+    myPath.addCurve(p, diff, diffForce, incr, false);
+
+    p.set(x0 - curveWidth - extra, y0 + shortStraight + curveWidth);
+    diff.set(0, -1);
+    incr.set(-bestTrajectoryWidth / 2, 0);
+    myPath.addCurve(p, diff, diffForce, incr, true);
+
+    p.set(x0 - curveWidth - extra, y0 + curveWidth);
+    diff.set(0, -1);
+    incr.set(-bestTrajectoryWidth / 2, 0);
+    myPath.addCurve(p, diff, diffForce, incr, false);
+
+    p.set(x0, y0 - extra);
+    diff.set(1, 0);
+    incr.set(0, -bestTrajectoryWidth / 2);
+    myPath.addCurve(p, diff, diffForce, incr, true);
+
+    myPath.finishPath();
+
+    return myPath;
   }
 
   @Override
   void setFinishLinePoint() {
-    finishLinePoint.x = x0 + 3 * straightLength / 4;
+    finishLinePoint.x = x0 + 3 * longStraight / 4;
     finishLinePoint.y = y0 - widthTrack / 2;
   }
+
 }
 
 // abstract public class Track {

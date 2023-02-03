@@ -84,13 +84,14 @@ abstract public class Car {
   }
 
   public double rotationRate() { // function a * x / (b + x^2) because it goes to zero at infinity (no steering wheel is hard to move) and it is zero at the origin (because we can turn the car it it is stopped)
-    double scale = 10;
-    double displacement = 10;
+    // it is in degree
+    double scale = 7.5;
+    double displacement = 20;
     return scale * speed() / (displacement + speed() * speed());
   }
 
   public boolean isOnTrack() {
-    return t.area.contains(position.x, position.y);
+    return t.path.area.contains(position.x, position.y);
   }
 
   public void update() {
@@ -119,15 +120,6 @@ abstract public class Car {
       velocity = velocity.rotate(angle / (1 + speed()));
       isDrifting = Math.abs(Math.toDegrees(angle)) > 10;
     }
-    // velocity = velocity.rotate(rotationRate());
-    // velocity = velocity.rotate(rotationRate() / (1 + speed()));
-    // isDrifting = Math.abs(Math.toDegrees(difAngle)) > 30;
-    // isDrifting = false;
-    // velocity = direction.scalarProd(speed());
-
-    // direction = direction.scalarProd(1 / direction.norm()); // the direction hast to be always normalized.
-    // if (speed() < TOL)
-    // appliedBrakeTorque = 0;
     if (isDrifting) {
       appliedEngineForce *= 0.2;
       appliedBrakeForce *= 0.2;
@@ -137,16 +129,16 @@ abstract public class Car {
     velocity = newData[1];
 
     if (isPlayer) {
-      System.out.println("direction: " + direction.print() + " norm: " + direction.norm());
-      System.out.println("position: " + position.print() + " norm: " + position.norm());
-      System.out.println("velocity: " + velocity.print() + " norm: " + speed() + " norm (km/h): " + 3.6 * speed());
+      System.out.println("direction: " + direction + " norm: " + direction.norm());
+      System.out.println("position: " + position + " norm: " + position.norm());
+      System.out.println("velocity: " + velocity + " norm: " + speed() + " norm (km/h): " + 3.6 * speed());
       System.out.println("rotationRate: " + rotationRate());
-      System.out.println("direction: " + direction.print() + " norm: " + direction.norm());
+      System.out.println("direction: " + direction + " norm: " + direction.norm());
       System.out.println("rotation: " + rotationAngle);
-      System.out.println("engine force: " + engineForce().print() + " norm: " + engineForce().norm());
-      System.out.println("braking force: " + brakeForce().print() + " norm: " + brakeForce().norm());
-      System.out.println("drag force: " + dragForce().print() + " norm: " + dragForce().norm());
-      System.out.println("friction force: " + rollingResistanceForce().print() + " norm: " + rollingResistanceForce().norm());
+      System.out.println("engine force: " + engineForce() + " norm: " + engineForce().norm());
+      System.out.println("braking force: " + brakeForce() + " norm: " + brakeForce().norm());
+      System.out.println("drag force: " + dragForce() + " norm: " + dragForce().norm());
+      System.out.println("friction force: " + rollingResistanceForce() + " norm: " + rollingResistanceForce().norm());
       System.out.println("isOnTrack: " + isOnTrack());
     }
     // direction.rotate(rotationAngle, position);
