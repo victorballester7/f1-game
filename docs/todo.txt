@@ -3,6 +3,3 @@ a la gespa s'ha d'anar més lent i derrapar més
 fer contador de voltes 
 posar la classificació
 posar un menú incial
-
-
-LAST time: I was playing with the new getTangentVector() function. COnsider using degree-2 Bezier curves as it is easier to compute the time t given a position (x, y), and then compute the tangent vector. 

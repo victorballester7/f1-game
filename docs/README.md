@@ -1,4 +1,4 @@
-# Formula 1 game implemented in Java
+# Formula 1 game
 
 <!--
 ## Requirements
