@@ -3,3 +3,7 @@ a la gespa s'ha d'anar més lent i derrapar més
 fer contador de voltes 
 posar la classificació
 posar un menú incial
+add sound
+do pause with P key
+clasification
+fps

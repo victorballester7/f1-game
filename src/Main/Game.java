@@ -23,13 +23,14 @@ public class Game {
   public static final int lightsImgHeight = 100;
   public static final int lightsImgWidth = lightsImgHeight / 4 * 9;
   public boolean lightsOut = false;
-  // public static final int lightsDelay = 1000; // in milliseconds
-  public static final int lightsDelay = 100; // in milliseconds
+  public static final int lightsDelay = 1000; // in milliseconds
   public AffineTransform atWorldToScreen;
   public AffineTransform atWorldToSmallScreen;
   public AffineTransform atCarToScreen;
   public static final int numCars = 9;
+  public static final int totalLaps = 1;
   public int currentCarView = 0;
+  public static int levelDifficulty = 1;
   public Track t;
   public Car[] cars = new Car[numCars];
   public boolean keyLeft = false;
@@ -44,7 +45,7 @@ public class Game {
   private void initialize() {
     t = new Indianapolis(17, 300, 300, new Vector2D(1, 0));
     // widthCarView = Track.widthTrack * 2;
-    widthCarView = t.widthTrack * 10;
+    widthCarView = t.widthTrack * 5;
 
     cars[0] = new McLaren(1, t, true);
     cars[1] = new Ferrari(2, t, false);
@@ -94,25 +95,57 @@ public class Game {
     }
   }
 
+  public void orderCars() {
+    int count = 1;
+    for (int i = 0; i < numCars; i++) {
+      if (cars[i].hasFinished()) {
+        cars[i].orderedPosition = cars[i].finalPosition;
+      } else {
+        for (int j = 0; j < numCars; j++) {
+          if (j != i && cars[i].isBehind(cars[j]))
+            count++;
+        }
+        cars[i].orderedPosition = count;
+      }
+      count = 1;
+    }
+  }
+
+  public static double levelOfDifficulty() {
+    if (levelDifficulty == 3)
+      return 1;
+    else if (levelDifficulty == 2)
+      return 0.75;
+    else
+      return 0.5;
+
+  }
+
   public void update() {
+
     worldToScreenTransform();
     worldToSmallScreenTransform();
     carToScreenTransform();
-
+    // System.out.println();
+    // for (int i = 1; i <= numCars; i++) {
+    // for (Car car : cars) {
+    // // if (car instanceof Lotus || car instanceof Renault2016)
+    // System.out.println(car.getClass() + ": " + car.orderedPosition);
+    // }
+    // }
     if (lightsOut) {
       for (int i = 0; i < numCars; i++) {// Cars
         Car c = cars[i];
         if (c.isPlayer) {
-          System.out.println("Im here");
           if (keyLeft)
             c.direction = c.direction.rotate(Math.toRadians(c.rotationRate()));
 
           if (keyRight)
             c.direction = c.direction.rotate(Math.toRadians(-c.rotationRate()));
 
-          if (keyUp)
+          if (keyUp) {
             c.appliedEngineForce = c.engineMAX;
-          else
+          } else
             c.appliedEngineForce = 0;
 
           if (keyDown)
@@ -122,14 +155,24 @@ public class Game {
         }
         // ordered positions updating.
         c.update();
-        c.orderedPosition = 1;
-        for (int j = 0; j < i; j++) {
-          if (c.orderedPosition <= cars[j].orderedPosition) {
-            if (c.isBehind(cars[j]))
-              c.orderedPosition = cars[j].orderedPosition + 1;
-            else
-              cars[j].orderedPosition++;
-          }
+        // if (c.hasFinished())
+        // c.orderedPosition = c.finalPosition;
+        // else
+        // c.orderedPosition = 1;
+        // for (int j = 0; j < i; j++) {
+        // if (c.orderedPosition <= cars[j].orderedPosition) {
+        // if (c.isBehind(cars[j]))
+        // c.orderedPosition = cars[j].orderedPosition + 1;
+        // else
+        // cars[j].orderedPosition++;
+        // }
+        // }
+      }
+      orderCars();
+      for (Car c : cars) {
+        if (c.orderedPosition == 1 && c.lapCounter == Window.lapLabel.currentLap) {
+          Window.lapLabel.increment();
+          break;
         }
       }
     }

@@ -10,15 +10,20 @@ public class BrawnGP extends Car {
   }
 
   @Override
-  String getCarImagePath() {
+  public String getCarImagePath() {
     return "images/cars/carBrawnGP.png";
   }
 
   @Override
-  void setCarFeatures() {
+  public void setCarFeatures() {
     engineMAX = 8500;
     brakeMAX = 9000;
-    color = new Color(183, 255, 89);
+    color = new Color(136, 215, 33);
     color2 = new Color(223, 223, 223);
+  }
+
+  @Override
+  public String toString() {
+    return "BrawnGP";
   }
 }

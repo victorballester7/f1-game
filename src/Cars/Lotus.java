@@ -11,16 +11,20 @@ public class Lotus extends Car {
   }
 
   @Override
-  String getCarImagePath() {
+  public String getCarImagePath() {
     return "images/cars/carLotus.png";
   }
 
   @Override
-  void setCarFeatures() {
+  public void setCarFeatures() {
     engineMAX = 6000;
-    brakeMAX = 12000;
+    brakeMAX = 15000;
     color = new Color(53, 53, 53);
     color2 = new Color(255, 221, 155);
   }
 
+  @Override
+  public String toString() {
+    return "Lotus";
+  }
 }

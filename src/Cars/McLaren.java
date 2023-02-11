@@ -11,15 +11,20 @@ public class McLaren extends Car {
   }
 
   @Override
-  String getCarImagePath() {
+  public String getCarImagePath() {
     return "images/cars/carMcLaren.png";
   }
 
   @Override
-  void setCarFeatures() {
+  public void setCarFeatures() {
     engineMAX = 8000;
     brakeMAX = 10000;
     color = new Color(196, 210, 219);
     color2 = new Color(255, 23, 42);
+  }
+
+  @Override
+  public String toString() {
+    return "McLaren";
   }
 }

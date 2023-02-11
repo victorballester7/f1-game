@@ -8,6 +8,7 @@ import java.io.*;
 import javax.imageio.ImageIO;
 
 import Circuit.*;
+import Main.Game;
 import Misc.Vector2D;
 
 abstract public class Car {
@@ -18,6 +19,7 @@ abstract public class Car {
   public static final double width = 2;
   public int id;
   public int orderedPosition; // 1st, 2nd, ...
+  public int finalPosition; // 1st, 2nd, ...
   public int lapCounter = -1;
   public static double initialSteeringAngle;
   public double rotationAngle = Math.toRadians(0);
@@ -35,7 +37,7 @@ abstract public class Car {
   private static final double mu = 1.5; // friction coefficient
   private static final double Cd = 0.7; // drag coefficient
   private static final double CrTrack = 30 * Cd; // rolling coefficient track
-  private static final double CrWeed = 50 * CrTrack; // rolling coefficient weed
+  private static final double CrWeed = 30 * CrTrack; // rolling coefficient weed
   private static final double airDensity = 1.204; // air density
   private static final double area = 1.5; // cross sectional area
   private static final double m = 750; // mass of the car
@@ -48,6 +50,7 @@ abstract public class Car {
   private boolean isBraking = false;
   private boolean isDrifting;
   public int currentPathIndex;
+  public int totalPathsDone = 0;
 
   public Car(int id, Track t, boolean isPlayer) {
     this.id = id;
@@ -61,6 +64,10 @@ abstract public class Car {
     position = setInitialPosition(t, orderedPosition);
     initialPosition = position.clone();
     setCarFeatures();
+    if (!isPlayer) {
+      engineMAX = engineMAX * Game.levelOfDifficulty();
+      brakeMAX = brakeMAX * Game.levelOfDifficulty();
+    }
   }
 
   private BufferedImage setImgCar() {
@@ -92,9 +99,9 @@ abstract public class Car {
     return new Vector2D(x, y);
   }
 
-  abstract String getCarImagePath();
+  abstract public String getCarImagePath();
 
-  abstract void setCarFeatures();
+  abstract public void setCarFeatures();
 
   public double speed() {
     return velocity.norm();
@@ -125,24 +132,16 @@ abstract public class Car {
   }
 
   public boolean isBehind(Car c) {
-    // System.out.println(lapCounter + " i " + c.lapCounter);
-    if (lapCounter < c.lapCounter)
+    if (totalPathsDone < c.totalPathsDone)
       return true;
-    else if (lapCounter > c.lapCounter)
+    else if (totalPathsDone > c.totalPathsDone)
       return false;
-    else { // lapCounter = c.lapCounter
-      if (currentPathIndex < c.currentPathIndex)
+    else {
+      // I know, there can be cases in which this is not a sufficient condition (for example a very closed curved). But in general let's assume that it's tue.
+      if (position.distance(nextPath().startPoint) > c.position.distance(nextPath().startPoint))
         return true;
-      else if (currentPathIndex > c.currentPathIndex)
+      else
         return false;
-      else { // currentPathIndex = c.currentPathIndex
-        // System.out.println("hola");
-        // I know, there can be cases in which this is not a sufficient condition (for example a very closed curved). But in general let's assume that it's tue.
-        if (position.distance(nextPath().startPoint) > c.position.distance(nextPath().startPoint))
-          return true;
-        else
-          return false;
-      }
     }
   }
 
@@ -216,6 +215,14 @@ abstract public class Car {
 
   public void reincorporate(Path p, double time, double force) {
     direction = p.tangent(time).sum(p.positionTo(position, time).scalarProd(-force)).normalize();
+    // System.out.println("tangent: " + p.tangent(time));
+  }
+
+  public boolean hasFinished() {
+    if (lapCounter == Game.totalLaps)
+      return true;
+    else
+      return false;
   }
 
   public void update() {
@@ -231,7 +238,10 @@ abstract public class Car {
       // note that if we are out of the track at this moment, 'currentPathIndex' will
       // be equal to the last 'currentPathIndex' stored.
       if (t.paths[i].area.contains(position.toPoint())) {
-        currentPathIndex = i;
+        if (currentPathIndex != i) {
+          totalPathsDone++;
+          currentPathIndex = i;
+        }
         break;
       }
     }
@@ -304,7 +314,7 @@ abstract public class Car {
 
         // System.out.println("Inside the curve:" + time + " speed: " + speed() + "
         // speedMAX: " + speedMax(c, time) + "direction" + direction);
-        if (speed() < speedMax(c, time)) {
+        if (speed() < speedMax(c, time) * Game.levelOfDifficulty()) {
           appliedEngineForce = engineMAX;
           appliedBrakeForce = 0;
         } else {
@@ -339,10 +349,19 @@ abstract public class Car {
       appliedEngineForce *= 0.2;
       appliedBrakeForce *= 0.2;
     }
+
+    if (hasFinished()) {
+      appliedEngineForce = 0;
+      appliedBrakeForce = brakeMAX;
+    }
+
     Vector2D[] newData = rk4();
 
     if (t.areaSquaresfinishLine.contains(position.toPoint()) && !t.areaSquaresfinishLine.contains(newData[0].toPoint()))
       lapCounter++;
+
+    if (hasFinished())
+      finalPosition = orderedPosition;
 
     position = newData[0].clone();
     velocity = newData[1].clone();
@@ -350,28 +369,21 @@ abstract public class Car {
     // if (isPlayer) {
     // System.out.println("direction: " + direction + " norm: " + direction.norm());
     // System.out.println("position: " + position + " norm: " + position.norm());
-    // System.out.println("velocity: " + velocity + " norm: " + speed() + " norm
-    // (km/h): " + 3.6 * speed());
+    // System.out.println("velocity: " + velocity + " norm: " + speed() + " norm(km/h): " + 3.6 * speed());
     // System.out.println("rotationRate: " + rotationRate());
     // System.out.println("direction: " + direction + " norm: " + direction.norm());
     // System.out.println("rotation: " + rotationAngle);
-    // System.out.println("engine force: " + engineForce() + " norm: " +
-    // engineForce().norm());
-    // System.out.println("braking force: " + brakeForce() + " norm: " +
-    // brakeForce().norm());
-    // System.out.println("drag force: " + dragForce(velocity) + " norm: " +
-    // dragForce(velocity).norm());
-    // System.out.println("friction force: " + rollingResistanceForce(velocity) + "
-    // norm: " + rollingResistanceForce(velocity).norm());
+    // System.out.println("engine force: " + engineForce() + " norm: " + engineForce().norm());
+    // System.out.println("braking force: " + brakeForce() + " norm: " + brakeForce().norm());
+    // System.out.println("drag force: " + dragForce(velocity) + " norm: " + dragForce(velocity).norm());
+    // System.out.println("friction force: " + rollingResistanceForce(velocity) + " norm: " + rollingResistanceForce(velocity).norm());
     // System.out.println("isOnTrack: " + isOnTrack());
-    // // System.out.println("isOnBestTrack: " +
-    // t.area.contains(position.toPoint()));
+    // System.out.println("isOnBestTrack: " + t.area.contains(position.toPoint()));
     // System.out.println("lapCounter: " + lapCounter);
     // System.out.println("orderedPosition: " + orderedPosition);
     // System.out.println("currentPathIndex: " + currentPathIndex);
     // System.out.println("Tangent: " + path.tangent(time));
-    // System.out.println("comparisonOrientationCurve: " +
-    // (Vector2D.signedAngle(path.tangent(time), direction) > 0));
+    // System.out.println("comparisonOrientationCurve: " + (Vector2D.signedAngle(path.tangent(time), direction) > 0));
     // }
     // direction.rotate(rotationAngle, position);
     // rotationAngle += Math.toRadians(20);

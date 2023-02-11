@@ -18,15 +18,15 @@ public class myButton extends JButton {
   private int y; // y-coordinate of the center of the button
   public boolean isPressed = false;
 
-  public myButton(JFrame f, String text, Image img, String position) {
+  public myButton(String text, Image img, String position) {
     super(text);
     this.text = text;
     this.img = new ImageIcon(img.getScaledInstance(Game.iconSize, Game.iconSize, Image.SCALE_DEFAULT));
     this.position = position;
-    setConfig(f);
+    setConfig();
   }
 
-  public void setConfig(JFrame f) {
+  public void setConfig() {
     setIcon(img);
     setFont(new Font(Game.fontName, Game.fontStyle, Game.fontSize));
     setFocusable(false); // in order to use the keys (not for the button but for the rest of the game).
@@ -34,7 +34,6 @@ public class myButton extends JButton {
     setBorderPainted(false); // remove painted border when hovering mouse above it
     setContentAreaFilled(false);
     setSize(getPreferredSize().width, getPreferredSize().height);
-    updateSize(f);
   }
 
   public void updateSize(JFrame f) {
@@ -51,7 +50,6 @@ public class myButton extends JButton {
   public void addSecondTextImage(String text2, Image img2) {
     this.text2 = text2;
     this.img2 = new ImageIcon(img2.getScaledInstance(Game.iconSize, Game.iconSize, Image.SCALE_DEFAULT));
-    ;
   }
 
   public void modify() {
@@ -69,7 +67,6 @@ public class myButton extends JButton {
   protected void paintComponent(Graphics g) {
     if (getModel().isArmed()) {
       g.setColor(bPressed); // Background color when button is pressed
-      // g.setColor(bPressed); // Background color when button is pressed
       setForeground(fPressed); // Foreground color when button is pressed
     } else {
       g.setColor(b); // Background color when button is NOT pressed
@@ -80,9 +77,9 @@ public class myButton extends JButton {
     super.paintComponent(g);
   }
 
-  @Override
-  protected void paintBorder(Graphics g) {
-    // g.setColor(getForeground());
-    // g.drawRoundRect(0, 0, getSize().width - 1, getSize().height - 1, 13, 13);
-  }
+  // @Override
+  // protected void paintBorder(Graphics g) {
+  // // g.setColor(getForeground());
+  // // g.drawRoundRect(0, 0, getSize().width - 1, getSize().height - 1, 13, 13);
+  // }
 }

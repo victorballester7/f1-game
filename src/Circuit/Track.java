@@ -150,12 +150,12 @@ abstract public class Track {
     // g2.draw(at.createTransformedShape(bounds));
     g2.setColor(Color.YELLOW);
     // g2.fill(at.createTransformedShape(areaBestTrajectory));
-    for (Path p : pathsBestTrajectory) {
-      if (p instanceof Line)
-        g2.draw(at.createTransformedShape(((Line) p).line));
-      else
-        g2.draw(at.createTransformedShape(((Curve) p).curve));
-    }
+    // for (Path p : pathsBestTrajectory) {
+    // if (p instanceof Line)
+    // g2.draw(at.createTransformedShape(((Line) p).line));
+    // else
+    // g2.draw(at.createTransformedShape(((Curve) p).curve));
+    // }
     // g2.draw(at.createTransformedShape(path.path));
     // g2.setColor(Color.BLUE);
     // g2.draw(at.createTransformedShape(bestTrajectory.innerPath));

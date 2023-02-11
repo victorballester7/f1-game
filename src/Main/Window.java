@@ -8,7 +8,10 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 
 import Cars.Car;
+import Misc.ClassificationBoard;
+import Misc.LapCounter;
 import Misc.myButton;
+import Misc.myLabel;
 import Misc.myOptionPane;
 
 import java.io.*;
@@ -25,6 +28,10 @@ public class Window implements KeyListener, ActionListener {
   private Image changeViewCarImg = null;
   public static JFrame frame;
   public static GamePanel mainPanel, smallCircuitPanel;
+  public static ClassificationBoard classification;
+  public static LapCounter lapLabel;
+  public static Color lapLabelBackground = new Color(50, 50, 50);
+  public static Color lapLabelForeground = new Color(220, 220, 220);
   public static myOptionPane carViewMenu;
   private static Game game;
 
@@ -54,27 +61,40 @@ public class Window implements KeyListener, ActionListener {
     frame.setContentPane(mainPanel);
     frame.add(smallCircuitPanel);
     // Play button
-    frame.setLayout(null); // necessary to display the button in a correct position
+    // frame.setLayout(null); // necessary to display the button in a correct position
     // configButton(playButton, playButtonImg, (WIDTH - playButtonImgWidth) / 2,
     // 50);
     // configButton(viewButton, vie);
     // configPlayButton();
 
-    playButton = new myButton(frame, "Start", playButtonImg, "center");
+    playButton = new myButton("Start", playButtonImg, "center");
     playButton.addActionListener(this);
-    viewButton = new myButton(frame, "Track view", viewWorldButtonImg, "left");
+    viewButton = new myButton("Track view", viewWorldButtonImg, "left");
     viewButton.addSecondTextImage("Car view", viewCarButtonImg);
     viewButton.addActionListener(this);
     frame.add(playButton);
     frame.add(viewButton);
 
-    frame.setLayout(new FlowLayout());
-    carViewMenu = new myOptionPane(frame, "Change car view", changeViewCarImg);
+    // JLabel label = new JLabel("Sample text");
+    // label.setFont(label.getFont().deriveFont(20.0F));
+    // label.setForeground(Color.white);
+    // frame.setLayout(null); // necessary to display the button in a correct position
+
+    classification = new ClassificationBoard(game.cars, 200, 500);
+    for (JLabel label : classification.labels)
+      frame.add(label);
+    classification.hide();
+
+    lapLabel = new LapCounter(Game.totalLaps, "topcenter", frame, lapLabelBackground, lapLabelForeground);
+    // lapLabel = new myLabel(" LAP 0 / " + Game.totalLaps + " ", 500, 500, 200, 20, lapLabelBackground, lapLabelForeground);
+    frame.add(lapLabel);
+    lapLabel.setVisible(false);
+    // carViewMenu = new myOptionPane(frame, "Change car view", changeViewCarImg);
 
     // for (Car c : game.cars) {
     // carViewMenu.add(c.getClass().toString());
     // }
-    frame.add(carViewMenu);
+    // frame.add(carViewMenu);
 
     // carViewMenu = new JOptionPane("Prova");
     // frame.getContentPane().add(carViewMenu);
@@ -106,7 +126,10 @@ public class Window implements KeyListener, ActionListener {
       x = frame.getWidth() / 50;
       y = frame.getHeight() / 10;
       setBounds(x, y, (int) Math.round(scale * frame.getWidth()), (int) Math.round(scale * frame.getHeight()));
+    }
 
+    public void update(Graphics g) {
+      paint(g);
     }
 
     @Override
@@ -143,9 +166,8 @@ public class Window implements KeyListener, ActionListener {
       smallCircuitPanel.updateSize();
       playButton.updateSize(frame);
       viewButton.updateSize(frame);
-      // playButton.repaint((frame.getWidth() - playButton.getWidth()) / 2,
-      // (frame.getHeight() - playButton.getHeight()) / 10, playButton.getWidth(),
-      // playButton.getHeight());
+      classification.updateSize(frame, game.cars);
+      lapLabel.updateSize(frame);
 
       // lights
       if (isPrincipal) {
@@ -157,10 +179,10 @@ public class Window implements KeyListener, ActionListener {
           game.lightsOut = true;
 
         if (playButton.isPressed && !game.lightsOut) {
-          g.drawImage(game.lightsImg[count], (frame.getWidth() - Game.lightsImgWidth) / 2, frame.getHeight() / 30, this);
+          g.drawImage(game.lightsImg[count], (frame.getWidth() - Game.lightsImgWidth) / 2, frame.getHeight() / 15, this);
           count++;
         } else if (count < 200 && count > 0) { // extra time for the green lights to disappear
-          g.drawImage(game.lightsImg[6], (frame.getWidth() - Game.lightsImgWidth) / 2, frame.getHeight() / 30, this);
+          g.drawImage(game.lightsImg[6], (frame.getWidth() - Game.lightsImgWidth) / 2, frame.getHeight() / 15, this);
           count++;
         }
       }
@@ -227,6 +249,8 @@ public class Window implements KeyListener, ActionListener {
     if (button == Window.playButton) {
       Window.playButton.isPressed = true;
       Window.frame.remove(Window.playButton);
+      classification.show();
+      lapLabel.setVisible(true);
     } else if (button == Window.viewButton) {
       Window.viewButton.isPressed = !Window.viewButton.isPressed;
       Window.viewButton.modify();

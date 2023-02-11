@@ -10,15 +10,20 @@ public class Renault2009 extends Car {
   }
 
   @Override
-  String getCarImagePath() {
+  public String getCarImagePath() {
     return "images/cars/carRenault2009.png";
   }
 
   @Override
-  void setCarFeatures() {
+  public void setCarFeatures() {
     engineMAX = 6500;
     brakeMAX = 10500;
     color = new Color(228, 107, 10);
     color2 = new Color(237, 198, 0);
+  }
+
+  @Override
+  public String toString() {
+    return "Renault2009";
   }
 }
